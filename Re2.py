@@ -690,9 +690,10 @@ class LexParser:
 
 #---- Some unit tests ----#
 
-import unittest
+import unittest, re
 
 class TestRegularExpression(unittest.TestCase):
+
     def test_1(self):
         s_sample = r"hello 'string\n\'STRING' world"
         redef = r"'([^'\\]*(?:\\.[^'\\]*)*)'"
@@ -710,26 +711,39 @@ class TestRegularExpression(unittest.TestCase):
         self.assertEqual(len(visit.groupvalues), 1)
         self.assertEqual(visit.groupvalues[0][1], r"string\n\'STRING")
 
-def Test_Re_Sample():
-    s_sample_Re = '''[A-Za-z_][A-Za-z0-9_]*'''
-    s_sample = r'"I know a is \(a) and b is \(b) and c+b=\(c+b)"'
-    redef = r'".*?(?=\\\(|")'
+    def test_2(self):
+        lexed = re.compile(r'[^\]+\-<>.,]+', re.VERBOSE)
+        s = 'A mandelbrot set fractal viewer in brainfuck2 wri,tten] by'
+        m = lexed.match(s, 0)
+        self.assertEqual(m.end(), 49)
+        lexed2 = re.compile(r'[^\]+-<>.,]+', re.VERBOSE)
+        m = lexed2.match(s, 0)
+        self.assertEqual(m.end(), 44)
 
-    s_sample = r"hello 'string\n\'STRING' world"
-    redef = r"'([^'\\]*(?:\\.[^'\\]*)*)'"
-
-    mod = Test_Parse_Re(redef)
-    visit = RegularExpression()
-
-    # for i in range(len(s_sample)):
-    if True:
-        i = 6
-        visit.input(s_sample, i)
+        redef = r'[^\]+\-<>.,]+'
+        mod = Test_Parse_Re(redef)
+        visit = RegularExpression()
+        visit.input(s, 0)
         mod.walkabout(visit)
-        #if visit.matchtoken():
-        #    break
-    print 'done'
-    print 'match: ', visit.matchtoken()
+        mt = visit.matchtoken()
+        if not mt:
+            self.fail('error')
+        word, pos = mt
+        self.assertEqual(word, r"A mandelbrot set fractal viewer in brainfuck2 wri")
+        self.assertEqual(pos, 49)
+
+        redef = r'[^\]+-<>.,]+'
+        mod = Test_Parse_Re(redef)
+        visit = RegularExpression()
+        visit.input(s, 0)
+        mod.walkabout(visit)
+        mt = visit.matchtoken()
+        if not mt:
+            self.fail('error')
+        word, pos = mt
+        self.assertEqual(word, r"A mandelbrot set fractal viewer in brainfuck")
+        self.assertEqual(pos, 44)
+
 
 if __name__ == '__main__':
-    Test_Re_Sample()
+    pass
